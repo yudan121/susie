@@ -1,0 +1,171 @@
+---
+title: "simulations"
+author: "Huang Xinrui"
+date: "2022-12-14"
+output: html_document
+---
+```{r}
+devtools::install_github("yudan121/susie")
+library(susie)
+```
+
+```{r}
+load("N2finemapping.RData")
+```
+
+```{r}
+N2 = N2finemapping
+```
+
+```{r}
+X = N2$X
+Y = N2$Y
+gt_coef = N2$true_coef
+```
+
+# Iterate for 1, 5, 10, 25 times respectively
+```{r}
+test_1 = IBSS(X, Y[,1], 1, 1, 5, 1)
+test_5 = IBSS(X, Y[,1], 1, 1, 5, 5)
+test_10 = IBSS(X, Y[,1], 1, 1, 5, 10)
+test_25 = IBSS(X, Y[,1], 1, 1, 5, 25)
+```
+
+# Calculate posterior inclusion probabilities
+```{r}
+tt1 = PIP(test_1$alpha_mat)
+tt5 = PIP(test_5$alpha_mat)
+tt10 = PIP(test_10$alpha_mat)
+tt25 = PIP(test_25$alpha_mat)
+sort(tt1, decreasing = TRUE)[1:20]
+order(tt1,decreasing = TRUE)[1:10]
+```
+
+# Derive credible sets and get purified ones
+```{r}
+cs1 = CredibleSet(test_1$alpha_mat, 0.95)
+pure_cs1 = purify_cs(X, cs1)
+cs5 = CredibleSet(test_5$alpha_mat, 0.95)
+pure_cs5 = purify_cs(X, cs5)
+cs10 = CredibleSet(test_10$alpha_mat, 0.95)
+pure_cs10 = purify_cs(X, cs10)
+cs25 = CredibleSet(test_25$alpha_mat, 0.95)
+pure_cs25 = purify_cs(X, cs25)
+```
+
+# Preparation for showing the credible sets
+```{r}
+p = 1002
+df_pip1 = data.frame("SNP" = 1:p, "PIP" = tt1, "cs" = rep(0, p))
+L = length(cs1)
+for(l in 1:L){
+  df_pip1$cs[cs1[[l]]] = l
+}
+df_pip1$cs = factor(df_pip1$cs)
+
+df_pip5 = data.frame("SNP" = 1:p, "PIP" = tt5, "cs" = rep(0, p))
+L = length(cs5)
+for(l in 1:L){
+  df_pip5$cs[cs5[[l]]] = l
+}
+df_pip5$cs = factor(df_pip5$cs)
+
+df_pip10 = data.frame("SNP" = 1:p, "PIP" = tt10, "cs" = rep(0, p))
+L = length(cs10)
+for(l in 1:L){
+  df_pip10$cs[cs10[[l]]] = l
+}
+df_pip10$cs = factor(df_pip10$cs)
+
+df_pip25 = data.frame("SNP" = 1:p, "PIP" = tt25, "cs" = rep(0, p))
+L = length(cs25)
+for(l in 1:L){
+  df_pip25$cs[cs25[[l]]] = l
+}
+df_pip25$cs = factor(df_pip25$cs)
+```
+
+# Preparation for showing the purified credible sets
+```{r}
+ndf_pip1 = data.frame("SNP" = 1:p, "PIP" = tt1, "cs" = rep(0, p))
+L = length(pure_cs1)
+if(L > 1){
+  for(l in 1:L){
+    ndf_pip1$cs[pure_cs1[[l]]] = l
+  }
+  ndf_pip1$cs = factor(ndf_pip1$cs)
+}
+ndf_pip1$cs = factor(ndf_pip1$cs)
+
+ndf_pip5 = data.frame("SNP" = 1:p, "PIP" = tt5, "cs" = rep(0, p))
+L = length(pure_cs5)
+for(l in 1:L){
+  ndf_pip5$cs[pure_cs5[[l]]] = l
+}
+ndf_pip5$cs = factor(ndf_pip5$cs)
+
+ndf_pip10 = data.frame("SNP" = 1:p, "PIP" = tt10, "cs" = rep(0, p))
+L = length(pure_cs10)
+for(l in 1:L){
+  ndf_pip10$cs[pure_cs10[[l]]] = l
+}
+ndf_pip10$cs = factor(ndf_pip10$cs)
+
+ndf_pip25 = data.frame("SNP" = 1:p, "PIP" = tt25, "cs" = rep(0, p))
+L = length(pure_cs25)
+for(l in 1:L){
+  ndf_pip25$cs[pure_cs25[[l]]] = l
+}
+ndf_pip25$cs = factor(ndf_pip25$cs)
+```
+
+```{r}
+library(ggplot2)
+library(corrplot)
+```
+
+# Exhibit the correlation among part of the SNPs
+```{r warning=FALSE}
+corrplot(cor(X[, 1:100]), type = "upper", tl.pos = "n")
+```
+
+# Display the (purified) credible sets with PIPs in each case
+```{r}
+ggplot(data = df_pip1, aes(x = SNP, y = PIP, color = cs)) + geom_point(aes(color = cs), alpha = 0.8) + scale_color_manual(values=c("grey", "blue", "red", "green", "yellow"))
+ggsave("dp1.png")
+```
+
+```{r}
+ggplot(data = ndf_pip1, aes(x = SNP, y = PIP, color = cs)) + geom_point(aes(color = cs), alpha = 0.8) + scale_color_manual(values=c("grey", "blue", "red", "green", "yellow"))
+ggsave("ndp1.png")
+```
+
+```{r}
+ggplot(data = df_pip5, aes(x = SNP, y = PIP, color = cs)) + geom_point(aes(color = cs), alpha = 0.8) + scale_color_manual(values=c("grey", "blue", "red", "green", "yellow"))
+ggsave("dp5.png")
+```
+
+```{r}
+ggplot(data = ndf_pip5, aes(x = SNP, y = PIP, color = cs)) + geom_point(aes(color = cs), alpha = 0.8) + scale_color_manual(values=c("grey", "blue", "red", "green", "yellow"))
+ggsave("ndp5.png")
+```
+
+```{r}
+ggplot(data = df_pip10, aes(x = SNP, y = PIP, color = cs)) + geom_point(aes(color = cs), alpha = 0.8) + scale_color_manual(values=c("grey", "blue", "red", "green", "yellow", "pink"))
+ggsave("dp10.png")
+```
+
+```{r}
+ggplot(data = ndf_pip10, aes(x = SNP, y = PIP, color = cs)) + geom_point(aes(color = cs), alpha = 0.8) + scale_color_manual(values=c("grey", "blue", "red", "green", "yellow"))
+ggsave("ndp10.png")
+```
+
+```{r}
+ggplot(data = df_pip25, aes(x = SNP, y = PIP, color = cs)) + geom_point(aes(color = cs), alpha = 0.8) + scale_color_manual(values=c("grey", "blue", "red", "green"))
+ggsave("dp25.png")
+```
+
+```{r}
+ggplot(data = ndf_pip25, aes(x = SNP, y = PIP, color = cs)) + geom_point(aes(color = cs), alpha = 0.8) + scale_color_manual(values=c("grey", "blue", "red"))
+ggsave("ndp25.png")
+```
